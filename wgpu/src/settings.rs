@@ -32,7 +32,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Settings {
         Settings {
-            present_mode: wgpu::PresentMode::AutoVsync,
+            present_mode: wgpu::PresentMode::Fifo,
             backends: wgpu::Backends::all(),
             default_font: Font::default(),
             default_text_size: Pixels(14.0),
