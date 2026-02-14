@@ -235,6 +235,7 @@ pub struct Common {
     pub(crate) size: LogicalSize<u32>,
     pub(crate) requested_size: (Option<u32>, Option<u32>),
     pub(crate) wp_viewport: Option<WpViewport>,
+    pub(crate) auto_size_limits: Option<iced_futures::core::layout::Limits>,
 }
 
 impl Default for Common {
@@ -247,6 +248,7 @@ impl Default for Common {
             size: LogicalSize::new(1, 1),
             requested_size: (None, None),
             wp_viewport: None,
+            auto_size_limits: None,
         }
     }
 }
@@ -904,12 +906,14 @@ impl SctkState {
             margin,
             size,
             exclusive_zone,
-            ..
+            size_limits,
         }: SctkLayerSurfaceSettings,
     ) -> Result<
         (core::window::Id, CommonSurface, Arc<Mutex<Common>>),
         LayerSurfaceCreationError,
     > {
+        let auto_size = size.is_none();
+
         let wl_output = match output {
             IcedOutput::All => None, // TODO
             IcedOutput::Active => None,
@@ -986,6 +990,7 @@ impl SctkState {
         ));
         common.requested_size = size;
         common.wp_viewport = wp_viewport;
+        common.auto_size_limits = if auto_size { Some(size_limits) } else { None };
         let common = Arc::new(Mutex::new(common));
         self.layer_surfaces.push(SctkLayerSurface {
             id,

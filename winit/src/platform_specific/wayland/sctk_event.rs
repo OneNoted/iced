@@ -743,6 +743,7 @@ impl SctkEvent {
                     display,
                     ..,
                 ) => {
+                    let auto_size_limits = common.lock().unwrap().auto_size_limits;
                     let wl_surface = surface.wl_surface();
                     let object_id = wl_surface.id();
                     let wrapper =
@@ -800,6 +801,7 @@ impl SctkEvent {
                         false, // TODO do we want to get this value here?
                         0,
                     );
+                    window.auto_size_limits = auto_size_limits;
                     _ = surface_ids.insert(object_id, wrapper.clone());
                     let logical_size = window.size();
 

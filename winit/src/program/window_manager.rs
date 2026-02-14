@@ -73,6 +73,7 @@ where
                 prev_dnd_destination_rectangles_count: 0,
                 resize_enabled: false,
                 redraw_requested: false,
+                auto_size_limits: None,
             },
         );
 
@@ -174,6 +175,7 @@ where
     pub renderer: P::Renderer,
     pub resize_enabled: bool,
     pub(crate) redraw_requested: bool,
+    pub auto_size_limits: Option<crate::core::layout::Limits>,
 }
 
 impl<P, C> Window<P, C>
@@ -182,6 +184,14 @@ where
     C: Compositor<Renderer = P::Renderer>,
     P::Theme: DefaultStyle,
 {
+    pub fn layout_size(&self) -> Size {
+        if let Some(limits) = self.auto_size_limits {
+            limits.max()
+        } else {
+            self.state.logical_size()
+        }
+    }
+
     pub fn position(&self) -> Option<Point> {
         self.raw
             .inner_position()

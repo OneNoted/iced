@@ -611,6 +611,11 @@ where
         }
     }
 
+    /// Returns the size of the root layout node.
+    pub fn base_size(&self) -> Size {
+        self.base.size()
+    }
+
     /// Relayouts and returns a new  [`UserInterface`] using the provided
     /// bounds.
     pub fn relayout(self, bounds: Size, renderer: &mut Renderer) -> Self {

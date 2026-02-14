@@ -1151,7 +1151,7 @@ async fn run_instance<'a, P, C>(
                     );
                 }
 
-                let logical_size = window.state.logical_size();
+                let layout_size = window.layout_size();
 
                 let _ = user_interfaces.insert(
                     id,
@@ -1159,7 +1159,7 @@ async fn run_instance<'a, P, C>(
                         &program,
                         user_interface::Cache::default(),
                         &mut window.renderer,
-                        logical_size,
+                        layout_size,
                         &mut debug,
                         id,
                         window.raw.clone(),
@@ -1372,12 +1372,12 @@ async fn run_instance<'a, P, C>(
                         if window.viewport_version
                             != window.state.viewport_version()
                         {
-                            let logical_size = window.state.logical_size();
+                            let layout_size = window.layout_size();
                             debug.layout_started();
                             let mut ui = user_interfaces
                                 .remove(&id)
                                 .expect("Remove user interface")
-                                .relayout(logical_size, &mut window.renderer);
+                                .relayout(layout_size, &mut window.renderer);
 
                             let _ = user_interfaces.insert(id, ui);
                             debug.layout_finished();
@@ -1624,6 +1624,19 @@ async fn run_instance<'a, P, C>(
                             &mut clipboard,
                             &mut messages,
                         );
+
+                    // Auto-resize: if this window has auto_size_limits,
+                    // resize the surface to match the content layout size.
+                    if window.auto_size_limits.is_some() {
+                        let ui = user_interfaces
+                            .get(&id)
+                            .expect("Get user interface");
+                        let content_size = ui.base_size();
+                        clipboard.request_logical_window_size(
+                            content_size.width,
+                            content_size.height,
+                        );
+                    }
 
                     let mut needs_redraw =
                         !no_window_events || !messages.is_empty();
@@ -2481,11 +2494,12 @@ where
         .drain()
         .filter_map(|(id, cache)| {
             let window = window_manager.get_mut(id)?;
+            let layout_size = window.layout_size();
             let interface = build_user_interface(
                 program,
                 cache,
                 &mut window.renderer,
-                window.state.logical_size(),
+                layout_size,
                 debug,
                 id,
                 window.raw.clone(),
