@@ -1467,6 +1467,26 @@ async fn run_instance<'a, P, C>(
                                             ),
                                         );
                                     }
+                                    compositor::SurfaceError::Outdated
+                                    | compositor::SurfaceError::Lost => {
+                                        debug.render_finished();
+                                        log::warn!(
+                                            "Surface {error:?}, reconfiguring..."
+                                        );
+
+                                        let physical_size =
+                                            window.state.viewport().physical_size();
+                                        if physical_size.width > 0
+                                            && physical_size.height > 0
+                                        {
+                                            compositor.configure_surface(
+                                                &mut window.surface,
+                                                physical_size.width,
+                                                physical_size.height,
+                                            );
+                                        }
+                                        window.request_redraw();
+                                    }
                                     _ => {
                                         debug.render_finished();
                                         log::error!(
