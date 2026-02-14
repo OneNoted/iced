@@ -1750,6 +1750,10 @@ async fn run_instance<'a, P, C>(
                     // Auto-resize windows with auto_size_limits after UI rebuild.
                     // The rebuilt UIs now reflect the latest application state,
                     // so base_size() returns the actual content dimensions.
+                    //
+                    // base_size() returns iced-logical units (layout coords).
+                    // window.size() returns compositor-logical units (physical / compositor_scale).
+                    // To convert: compositor_logical = iced_logical * app_scale_factor.
                     for (id, window) in window_manager.iter_mut() {
                         if let Some(limits) = window.auto_size_limits {
                             let ui = user_interfaces
@@ -1760,19 +1764,25 @@ async fn run_instance<'a, P, C>(
                             let w = content_size.width.max(min.width).max(1.0);
                             let h = content_size.height.max(min.height).max(1.0);
 
+                            // Convert from iced-logical to compositor-logical
+                            // by multiplying by the application scale factor.
+                            let app_scale = window.state.app_scale_factor() as f32;
+                            let target_w = (w * app_scale).ceil();
+                            let target_h = (h * app_scale).ceil();
+
                             // Only request resize if the size actually changed.
                             // Use window.size() (reads from guard.size, updated
                             // immediately by request_surface_size) rather than
                             // window.state.logical_size() (viewport, only updated
                             // on compositor configure events).
                             let current = window.size();
-                            if (w - current.width).abs() > 0.5
-                                || (h - current.height).abs() > 0.5
+                            if (target_w - current.width).abs() > 0.5
+                                || (target_h - current.height).abs() > 0.5
                             {
                                 let s = winit::dpi::Size::Logical(
                                     winit::dpi::LogicalSize::new(
-                                        w as f64,
-                                        h as f64,
+                                        target_w as f64,
+                                        target_h as f64,
                                     ),
                                 );
                                 _ = window.raw.request_surface_size(s);
