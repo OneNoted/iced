@@ -1760,8 +1760,12 @@ async fn run_instance<'a, P, C>(
                             let w = content_size.width.max(min.width).max(1.0);
                             let h = content_size.height.max(min.height).max(1.0);
 
-                            // Only request resize if the size actually changed
-                            let current = window.state.logical_size();
+                            // Only request resize if the size actually changed.
+                            // Use window.size() (reads from guard.size, updated
+                            // immediately by request_surface_size) rather than
+                            // window.state.logical_size() (viewport, only updated
+                            // on compositor configure events).
+                            let current = window.size();
                             if (w - current.width).abs() > 0.5
                                 || (h - current.height).abs() > 0.5
                             {
