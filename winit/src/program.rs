@@ -1625,21 +1625,6 @@ async fn run_instance<'a, P, C>(
                             &mut messages,
                         );
 
-                    // Auto-resize: if this window has auto_size_limits,
-                    // resize the surface to match the content layout size,
-                    // clamped to the limits' min to avoid zero-size protocol errors.
-                    if let Some(limits) = window.auto_size_limits {
-                        let ui = user_interfaces
-                            .get(&id)
-                            .expect("Get user interface");
-                        let content_size = ui.base_size();
-                        let min = limits.min();
-                        clipboard.request_logical_window_size(
-                            content_size.width.max(min.width).max(1.0),
-                            content_size.height.max(min.height).max(1.0),
-                        );
-                    }
-
                     let mut needs_redraw =
                         !no_window_events || !messages.is_empty();
 
@@ -1761,6 +1746,29 @@ async fn run_instance<'a, P, C>(
                         cached_interfaces,
                         &mut clipboard,
                     ));
+
+                    // Auto-resize windows with auto_size_limits after UI rebuild.
+                    // The rebuilt UIs now reflect the latest application state,
+                    // so base_size() returns the actual content dimensions.
+                    for (id, window) in window_manager.iter_mut() {
+                        if let Some(limits) = window.auto_size_limits {
+                            let ui = user_interfaces
+                                .get(&id)
+                                .expect("Get user interface");
+                            let content_size = ui.base_size();
+                            let min = limits.min();
+                            let w = content_size.width.max(min.width).max(1.0);
+                            let h = content_size.height.max(min.height).max(1.0);
+                            let s = winit::dpi::Size::Logical(
+                                winit::dpi::LogicalSize::new(
+                                    w as f64,
+                                    h as f64,
+                                ),
+                            );
+                            _ = window.raw.request_surface_size(s);
+                            window.request_redraw();
+                        }
+                    }
 
                     if actions > 0 {
                         proxy.free_slots(actions);
