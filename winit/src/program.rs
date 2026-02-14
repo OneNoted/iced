@@ -1626,15 +1626,17 @@ async fn run_instance<'a, P, C>(
                         );
 
                     // Auto-resize: if this window has auto_size_limits,
-                    // resize the surface to match the content layout size.
-                    if window.auto_size_limits.is_some() {
+                    // resize the surface to match the content layout size,
+                    // clamped to the limits' min to avoid zero-size protocol errors.
+                    if let Some(limits) = window.auto_size_limits {
                         let ui = user_interfaces
                             .get(&id)
                             .expect("Get user interface");
                         let content_size = ui.base_size();
+                        let min = limits.min();
                         clipboard.request_logical_window_size(
-                            content_size.width,
-                            content_size.height,
+                            content_size.width.max(min.width).max(1.0),
+                            content_size.height.max(min.height).max(1.0),
                         );
                     }
 
