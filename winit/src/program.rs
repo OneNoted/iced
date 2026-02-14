@@ -1759,14 +1759,21 @@ async fn run_instance<'a, P, C>(
                             let min = limits.min();
                             let w = content_size.width.max(min.width).max(1.0);
                             let h = content_size.height.max(min.height).max(1.0);
-                            let s = winit::dpi::Size::Logical(
-                                winit::dpi::LogicalSize::new(
-                                    w as f64,
-                                    h as f64,
-                                ),
-                            );
-                            _ = window.raw.request_surface_size(s);
-                            window.request_redraw();
+
+                            // Only request resize if the size actually changed
+                            let current = window.state.logical_size();
+                            if (w - current.width).abs() > 0.5
+                                || (h - current.height).abs() > 0.5
+                            {
+                                let s = winit::dpi::Size::Logical(
+                                    winit::dpi::LogicalSize::new(
+                                        w as f64,
+                                        h as f64,
+                                    ),
+                                );
+                                _ = window.raw.request_surface_size(s);
+                                window.request_redraw();
+                            }
                         }
                     }
 
